@@ -1,33 +1,23 @@
 package WizardTD;
-
+import WizardTD.App;
+import WizardTD.GameObject;
 import processing.core.PImage;
 
-/**
- * Represents a simple Circle object.
- */
+
 public class Circle extends GameObject {
 
-    /**
-     * The number of seconds between jumps.
-     */
-    public static final int SECONDS_BETWEEN_MOVES = 1;
+    // ========== Variables ==========
+    private int x_direction = 0;
+    private int y_direction = 0;
 
-    /**
-     * Keeps track of the number of frames since the last jump.
-     */
+    public static final int SECONDS_BETWEEN_MOVES = 1;
     private int timer;
 
-    /**
-     * Creates a new Circle object at (300, 250)
-     */
-    public Circle() {
-        super(300, 250);
+    public Circle(int x, int y) {
+        super(x, y);
         this.timer = 0;
     }
 
-    /**
-     * Updates the circle every frame.
-     */
     public void tick() {
         // Increments the timer
         this.timer++;
@@ -35,9 +25,38 @@ public class Circle extends GameObject {
         // If more frames have passed than the number of seconds x the framerate
         // the circle jumps 30 pixels to the left
         if (this.timer > SECONDS_BETWEEN_MOVES * App.FPS) {
-            this.x -= 30;
+            this.x += x_direction;
+            this.y += y_direction;
             // The timer is reset to 0
             this.timer = 0;
         }
     }
+    public void keyPressed(int keyCode) {
+                // Left: 37
+        // Up: 38
+        // Right: 39
+        // Down: 40
+        if (keyCode == 37) {
+            this.x_direction = -30;
+        } else if (keyCode == 38) {
+            this.y_direction = -30;
+        } else if (keyCode == 39) {
+            this.x_direction = 30;
+        } else if (keyCode == 40) {
+            this.y_direction = 30;
+        }
+    }
+
+    public void keyReleased(int keyCode) {
+                // Left: 37
+        // Up: 38
+        // Right: 39
+        // Down: 40
+        if (keyCode == 37 || keyCode == 39) {
+            this.x_direction = 0;
+        } else if (keyCode == 38 || keyCode == 40) {
+            this.y_direction = 0;
+        }
+    }
+
 }

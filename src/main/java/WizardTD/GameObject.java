@@ -4,27 +4,17 @@ import processing.core.PImage;
 import processing.core.PApplet;
 
 /**
- * Represents an abstract Shape object that is inherited by Square and Circle.
+ * Represents a game object.
  */
 public abstract class GameObject {
-    
-    /**
-     * The Shape's x-coordinate.
-     */
+
     protected int x;
-    
-    /**
-     * The Shape's y-coordinate.
-     */
     protected int y;
 
-    /**
-     * The Shape's sprite.
-     */
     private PImage sprite;
 
     /**
-     * Creates a new Shape object.
+     * I'm not sure what this does but will leave it here until further notice
      * 
      * @param x The x-coordinate.
      * @param y The y-coordinate.
@@ -35,7 +25,6 @@ public abstract class GameObject {
     }
 
     /**
-     * Sets the shape's sprite.
      * 
      * @param sprite The new sprite to use.
      */
@@ -73,5 +62,10 @@ public abstract class GameObject {
      */
     public int getY() {
         return this.y;
+    }
+
+    public void set_position(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 }

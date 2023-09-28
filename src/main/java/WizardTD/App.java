@@ -24,20 +24,25 @@ public class App extends PApplet {
     public static int HEIGHT = BOARD_WIDTH*CELLSIZE+TOPBAR;
 
     public static final int FPS = 60;
-
     public String configPath;
-
     public Random random = new Random();
-	
-	// Feel free to add any additional methods or attributes you want. Please put classes in different files.
 
+
+    // ========== Variables ==========
+    public Circle circle;
+    public static String[][] map = new String[BOARD_WIDTH][BOARD_WIDTH];
+    public Board_Piece piece;
+    public Enemy enemy;
+    public PImage path0, path1, path2, path3, gremlin;
+    public PImage grass, shrub, beetle, fireball, gremlin1, gremlin2, gremlin3, gremlin4, gremlin5;
+    public PImage tower0, tower1, tower2, wizard_house, worm;
+
+
+    // ========== Methods ==========
     public App() {
         this.configPath = "config.json";
     }
 
-    /**
-     * Initialise the setting of the window size.
-     */
 	@Override
     public void settings() {
         size(WIDTH, HEIGHT);
@@ -48,13 +53,170 @@ public class App extends PApplet {
      */
 	@Override
     public void setup() {
-        frameRate(FPS);
+        load_images();
 
-        // Load images during setup
-		// Eg:
-        // loadImage("src/main/resources/WizardTD/tower0.png");
-        // loadImage("src/main/resources/WizardTD/tower1.png");
-        // loadImage("src/main/resources/WizardTD/tower2.png");
+        frameRate(FPS);
+        this.circle = new Circle(200, 340);
+        this.circle.setSprite(fireball);
+
+        try {
+            setupBoard();
+        } catch (FileNotFoundException e) {
+            System.out.println(e);
+            return;
+        }
+        Enemy.generateAllPaths();
+
+        enemy = new Enemy(0, 0);
+        enemy.setSprite(gremlin);
+        enemy.draw(this);
+    }
+
+    public void load_images() {
+        path0 = this.loadImage("src/main/resources/WizardTD/path0.png");
+        path1 = this.loadImage("src/main/resources/WizardTD/path1.png");
+        path2 = this.loadImage("src/main/resources/WizardTD/path2.png");
+        path3 = this.loadImage("src/main/resources/WizardTD/path3.png");
+        gremlin = this.loadImage("src/main/resources/WizardTD/gremlin.png");
+
+
+        grass = this.loadImage("src/main/resources/WizardTD/grass.png");
+        shrub = this.loadImage("src/main/resources/WizardTD/shrub.png");
+        beetle = this.loadImage("src/main/resources/WizardTD/beetle.png");
+        fireball = this.loadImage("src/main/resources/WizardTD/fireball.png");
+        gremlin1 = this.loadImage("src/main/resources/WizardTD/gremlin1.png");
+        gremlin2 = this.loadImage("src/main/resources/WizardTD/gremlin2.png");
+        gremlin3 = this.loadImage("src/main/resources/WizardTD/gremlin3.png");
+        gremlin4 = this.loadImage("src/main/resources/WizardTD/gremlin4.png");
+        gremlin5 = this.loadImage("src/main/resources/WizardTD/gremlin5.png");
+
+        tower0 = this.loadImage("src/main/resources/WizardTD/towe0.png");
+        tower1 = this.loadImage("src/main/resources/WizardTD/tower1.png");
+        tower2 = this.loadImage("src/main/resources/WizardTD/tower2.png");
+        wizard_house = this.loadImage("src/main/resources/WizardTD/wizard_house.png");
+        worm = this.loadImage("src/main/resources/WizardTD/worm.png");
+    }
+    
+    public void setupBoard() throws FileNotFoundException {
+            Scanner input = new Scanner(new File("level1.txt"));
+            for (int i = 0; i < BOARD_WIDTH; i++) {
+                map[i] = input.nextLine().split("");
+            }
+            
+            piece = new Board_Piece(0, 0);
+        }
+
+    public void drawBoard() {
+        int wizard_x = 0;
+        int wizard_y = 0;
+
+        for (int i = 0; i < BOARD_WIDTH; i++) {
+            for (int j = 0; j < BOARD_WIDTH; j++) {
+                piece.set_position(j*CELLSIZE, i*CELLSIZE + TOPBAR);
+                if (map[i][j].equals(" ")) {
+                    piece.setSprite(grass);
+                } else  if (map[i][j].equals("S")) {
+                    piece.setSprite(shrub);
+                } else  if (map[i][j].equals("X")) {
+                    piece.setSprite(find_piece(map, i, j));
+                } else  if (map[i][j].equals("W")) {
+                    wizard_x = j;
+                    wizard_y = i;
+                }
+                piece.draw(this);
+            }
+        }
+        piece.setSprite(wizard_house);
+        piece.set_position(wizard_x * CELLSIZE, wizard_y * CELLSIZE + TOPBAR);
+        piece.draw(this);
+    }
+
+
+
+    PImage find_piece(String[][] map, int x, int y) {
+        // The count is used to combine the  number and orientation of paths into a single number.
+        // Top is 8, right is 4, bottom is 2, left is 1.
+        int count = 0;
+
+        // Top
+        if (y == 0) {
+            count += 8;
+        } else if (map[x][y-1].equals("X")){
+            count += 8;
+        }
+
+        // Right
+        if (x == BOARD_WIDTH-1) {
+            count += 4;
+        } else if (map[x+1][y].equals("X")){
+            count += 4;
+        }
+
+        // Bottom
+        if (y == BOARD_WIDTH-1) {
+            count += 2;
+        } else if (map[x][y+1].equals("X")){
+            count += 2;
+        }
+
+        // Left
+        if (x == 0) {
+            count += 1;
+        } else if (map[x-1][y].equals("X")){
+            count += 1;
+        }
+
+        // Hard coding problems require hardcoding solutions.
+        // - Me, 2023
+        switch (count) {
+            case 0:
+                // This shouldn't happen.
+                return gremlin;
+            case 1:
+                return rotateImageByDegrees(path0, 90);
+            case 2:
+                return path0;
+            case 3:
+                return rotateImageByDegrees(path1, 180);
+            case 4:
+                return rotateImageByDegrees(path0, 90);
+            case 5:
+                return rotateImageByDegrees(path0, 90);
+            case 6:
+                return rotateImageByDegrees(path1, 270);
+            case 7:
+                return rotateImageByDegrees(path2, 270);
+            case 8:
+                return path0;
+            case 9:
+                return rotateImageByDegrees(path1, 90);
+            case 10:
+                return path0;
+            case 11:
+                return rotateImageByDegrees(path2, 180);
+            case 12:
+                return path1;
+            case 13:
+                return rotateImageByDegrees(path2, 90);
+            case 14:
+                return path2;
+            case 15:
+                return path3;
+            default:
+                return gremlin;
+        }
+    }
+
+
+
+    @Override
+    public void draw() {
+        drawBoard();
+
+        this.circle.draw(this);
+        this.circle.tick();
+        enemy.tick();
+        enemy.draw(this);
 
     }
 
@@ -63,7 +225,7 @@ public class App extends PApplet {
      */
 	@Override
     public void keyPressed(){
-        
+        this.circle.keyPressed(this.keyCode);
     }
 
     /**
@@ -71,6 +233,7 @@ public class App extends PApplet {
      */
 	@Override
     public void keyReleased(){
+        this.circle.keyReleased(this.keyCode);
 
     }
 
@@ -89,15 +252,8 @@ public class App extends PApplet {
 
     }*/
 
-    /**
-     * Draw all elements in the game by current frame.
-     */
-	@Override
-    public void draw() {
-        
- 
-    }
 
+    // ========== System ==========
     public static void main(String[] args) {
         PApplet.main("WizardTD.App");
     }
