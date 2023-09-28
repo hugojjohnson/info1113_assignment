@@ -16,6 +16,7 @@ import java.util.*;
 public class App extends PApplet {
 
     public static final int CELLSIZE = 32;
+    public static final int WIZARDTOWERSIZE = 48;
     public static final int SIDEBAR = 120;
     public static final int TOPBAR = 40;
     public static final int BOARD_WIDTH = 20;
@@ -29,13 +30,16 @@ public class App extends PApplet {
 
 
     // ========== Variables ==========
-    public Circle circle;
     public static String[][] map = new String[BOARD_WIDTH][BOARD_WIDTH];
     public Board_Piece piece;
     public Enemy enemy;
     public PImage path0, path1, path2, path3, gremlin;
     public PImage grass, shrub, beetle, fireball, gremlin1, gremlin2, gremlin3, gremlin4, gremlin5;
     public PImage tower0, tower1, tower2, wizard_house, worm;
+
+    public PImage boardImg;
+
+    public Coordinates wizardCoordinates;
 
 
     // ========== Methods ==========
@@ -53,11 +57,8 @@ public class App extends PApplet {
      */
 	@Override
     public void setup() {
-        load_images();
-
         frameRate(FPS);
-        this.circle = new Circle(200, 340);
-        this.circle.setSprite(fireball);
+        load_images();
 
         try {
             setupBoard();
@@ -65,8 +66,8 @@ public class App extends PApplet {
             System.out.println(e);
             return;
         }
-        Enemy.generateAllPaths();
 
+        Enemy.generateAllPaths();
         enemy = new Enemy(0, 0);
         enemy.setSprite(gremlin);
         enemy.draw(this);
@@ -98,17 +99,19 @@ public class App extends PApplet {
     }
     
     public void setupBoard() throws FileNotFoundException {
-            Scanner input = new Scanner(new File("level1.txt"));
-            for (int i = 0; i < BOARD_WIDTH; i++) {
-                map[i] = input.nextLine().split("");
-            }
-            
-            piece = new Board_Piece(0, 0);
+        /**  Drawing the board was split into two stages to improve performance.
+        This first stage reads in the map, and constructs the board with all of the correct paths in the correct
+        orientations. It stitches each piece together in the PImage called boardImg.
+        That way, none of the calculations have to be done again and again in the draw function.
+        **/
+        Scanner input = new Scanner(new File("level1.txt"));
+        for (int i = 0; i < BOARD_WIDTH; i++) {
+            map[i] = input.nextLine().split("");
         }
-
-    public void drawBoard() {
-        int wizard_x = 0;
-        int wizard_y = 0;
+        // https://processing.org/reference/createImage_.html
+        boardImg = createImage(CELLSIZE * (BOARD_WIDTH+1), CELLSIZE * (BOARD_WIDTH+1) + 30, ARGB);
+        
+        piece = new Board_Piece(0, 0);
 
         for (int i = 0; i < BOARD_WIDTH; i++) {
             for (int j = 0; j < BOARD_WIDTH; j++) {
@@ -120,22 +123,33 @@ public class App extends PApplet {
                 } else  if (map[i][j].equals("X")) {
                     piece.setSprite(find_piece(map, i, j));
                 } else  if (map[i][j].equals("W")) {
-                    wizard_x = j;
-                    wizard_y = i;
+                    wizardCoordinates = new Coordinates(i, j);
                 }
-                piece.draw(this);
+                boardImg.copy(piece.getSprite(), 0, 0, CELLSIZE, CELLSIZE, j*CELLSIZE, i*CELLSIZE + TOPBAR, CELLSIZE, CELLSIZE);
             }
         }
+    }
+
+    public void drawBoard() {
+        piece.setSprite(boardImg);
+        piece.set_position(0, 0);
+        piece.draw(this);
+
+        // The wizard house is drawn on separately because it has a transparent background, and 
+        // image.copy does not work with backgrounds like those, so it was easier to just draw it.
         piece.setSprite(wizard_house);
-        piece.set_position(wizard_x * CELLSIZE, wizard_y * CELLSIZE + TOPBAR);
+        piece.set_position(wizardCoordinates.getX() * CELLSIZE, wizardCoordinates.getY() * CELLSIZE + TOPBAR);
         piece.draw(this);
     }
 
 
 
     PImage find_piece(String[][] map, int x, int y) {
-        // The count is used to combine the  number and orientation of paths into a single number.
-        // Top is 8, right is 4, bottom is 2, left is 1.
+        /**
+        The variable 'count' is used to combine the  number and orientation of paths into a single number.
+        Top is 8, right is 4, bottom is 2, left is 1.
+        For example, if count is 13 (= 8 + 4 + 1) there is a top, right and left path leading off it.
+        **/
         int count = 0;
 
         // Top
@@ -167,11 +181,8 @@ public class App extends PApplet {
         }
 
         // Hard coding problems require hardcoding solutions.
-        // - Me, 2023
+        // - Me
         switch (count) {
-            case 0:
-                // This shouldn't happen.
-                return gremlin;
             case 1:
                 return rotateImageByDegrees(path0, 90);
             case 2:
@@ -203,6 +214,7 @@ public class App extends PApplet {
             case 15:
                 return path3;
             default:
+                // This shouldn't happen.
                 return gremlin;
         }
     }
@@ -213,8 +225,6 @@ public class App extends PApplet {
     public void draw() {
         drawBoard();
 
-        this.circle.draw(this);
-        this.circle.tick();
         enemy.tick();
         enemy.draw(this);
 
@@ -225,7 +235,7 @@ public class App extends PApplet {
      */
 	@Override
     public void keyPressed(){
-        this.circle.keyPressed(this.keyCode);
+        // this.circle.keyPressed(this.keyCode);
     }
 
     /**
@@ -233,7 +243,7 @@ public class App extends PApplet {
      */
 	@Override
     public void keyReleased(){
-        this.circle.keyReleased(this.keyCode);
+        // this.circle.keyReleased(this.keyCode);
 
     }
 
@@ -292,7 +302,6 @@ public class App extends PApplet {
                 result.set(i, j, rotated.getRGB(i, j));
             }
         }
-
         return result;
     }
 }

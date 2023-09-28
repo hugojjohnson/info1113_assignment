@@ -137,7 +137,6 @@ public class Enemy extends GameObject {
             }
         }
         return null;
-        // return new ArrayList<Coordinates>();
     }
 
     public static String[][] copyMap(String[][] map) {
@@ -148,20 +147,5 @@ public class Enemy extends GameObject {
             }
         }
         return mapCopy;
-    }
-}
-
-class Coordinates {
-    int x;
-    int y;
-    Coordinates (int y, int x) {
-        this.y = y;
-        this.x = x;
-    }
-    public int getX() {
-        return this.x;
-    }
-    public int getY() {
-        return this.y;
     }
 }

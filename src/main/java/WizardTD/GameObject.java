@@ -31,6 +31,9 @@ public abstract class GameObject {
     public void setSprite(PImage sprite) {
         this.sprite = sprite;
     }
+    public PImage getSprite() {
+        return this.sprite;
+    }
 
     /**
      * Updates the shape every frame.
