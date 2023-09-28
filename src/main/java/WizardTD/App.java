@@ -32,7 +32,7 @@ public class App extends PApplet {
     // ========== Variables ==========
     public static String[][] map = new String[BOARD_WIDTH][BOARD_WIDTH];
     public Board_Piece piece;
-    public Enemy enemy;
+    public ArrayList<Enemy> enemies = new ArrayList<Enemy>();
     public PImage path0, path1, path2, path3, gremlin;
     public PImage grass, shrub, beetle, fireball, gremlin1, gremlin2, gremlin3, gremlin4, gremlin5;
     public PImage tower0, tower1, tower2, wizard_house, worm;
@@ -52,7 +52,7 @@ public class App extends PApplet {
         size(WIDTH, HEIGHT);
     }
 
-    /**
+    /*
      * Load all resources such as images. Initialise the elements such as the player, enemies and map elements.
      */
 	@Override
@@ -68,9 +68,7 @@ public class App extends PApplet {
         }
 
         Enemy.generateAllPaths();
-        enemy = new Enemy(0, 0);
-        enemy.setSprite(gremlin);
-        enemy.draw(this);
+        spawnEnemy();
     }
 
     public void load_images() {
@@ -91,7 +89,7 @@ public class App extends PApplet {
         gremlin4 = this.loadImage("src/main/resources/WizardTD/gremlin4.png");
         gremlin5 = this.loadImage("src/main/resources/WizardTD/gremlin5.png");
 
-        tower0 = this.loadImage("src/main/resources/WizardTD/towe0.png");
+        tower0 = this.loadImage("src/main/resources/WizardTD/tower0.png");
         tower1 = this.loadImage("src/main/resources/WizardTD/tower1.png");
         tower2 = this.loadImage("src/main/resources/WizardTD/tower2.png");
         wizard_house = this.loadImage("src/main/resources/WizardTD/wizard_house.png");
@@ -144,7 +142,7 @@ public class App extends PApplet {
 
 
 
-    PImage find_piece(String[][] map, int x, int y) {
+    PImage find_piece (String[][] map, int x, int y) {
         /**
         The variable 'count' is used to combine the  number and orientation of paths into a single number.
         Top is 8, right is 4, bottom is 2, left is 1.
@@ -219,15 +217,38 @@ public class App extends PApplet {
         }
     }
 
+    void spawnEnemy () {
+        Enemy enemy = new Enemy(0, 0);
+        enemy.setSprite(gremlin);
+        enemies.add(enemy);
+    }
+
+    void despawnEnemies() {
+        if (enemies.size() == 0) {
+            return;
+        }
+        ArrayList<Enemy> choppingBlock = new ArrayList<Enemy>();
+        for (Enemy enemy : enemies) {
+            if (enemy.checkpoints.size() == 0) {
+                choppingBlock.add(enemy);
+            }
+        }
+        for (Enemy enemy : choppingBlock) {
+            enemies.remove(enemy);
+        }
+    }
+
 
 
     @Override
     public void draw() {
         drawBoard();
-
-        enemy.tick();
-        enemy.draw(this);
-
+        despawnEnemies();
+        
+        for (int i = 0; i < enemies.size(); i++) {
+            enemies.get(i).tick();
+            enemies.get(i).draw(this);
+        }
     }
 
     /**
@@ -303,5 +324,21 @@ public class App extends PApplet {
             }
         }
         return result;
+    }
+}
+
+class Coordinates {
+    int x;
+    int y;
+    
+    Coordinates (int y, int x) {
+        this.y = y;
+        this.x = x;
+    }
+    public int getX() {
+        return this.x;
+    }
+    public int getY() {
+        return this.y;
     }
 }

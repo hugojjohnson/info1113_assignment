@@ -1,8 +1,11 @@
 package WizardTD;
 import WizardTD.App;
 import WizardTD.GameObject;
+// import WizardTD.Coordinates;
+// import WizardTD.*;
 import processing.core.PImage;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -10,16 +13,14 @@ import java.util.Arrays;
 public class Enemy extends GameObject {
 
     // ========== Variables ==========
-    private int x_direction = 0;
-    private int y_direction = 0;
 
     public static ArrayList<ArrayList<Coordinates>> paths = new ArrayList<ArrayList<Coordinates>>();
-    private ArrayList<Coordinates> checkpoints;
+    public ArrayList<Coordinates> checkpoints;
 
 
     public Enemy(int x, int y) {
         super(x, y);
-        checkpoints = paths.get(0);
+        this.checkpoints = new ArrayList<Coordinates>(paths.get(0));
         for (ArrayList<Coordinates> path : paths) {
             for (Coordinates coord : path) {
                 System.out.printf("(%d, %d)%n", coord.getX(), coord.getY());
@@ -30,6 +31,7 @@ public class Enemy extends GameObject {
     public void tick() {
         if (this.x == checkpoints.get(0).getX() * App.CELLSIZE && this.y == checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR) {
             this.checkpoints.remove(0);
+            return;
         }
         // Move towards next checkpoint
         if (this.x < checkpoints.get(0).getX() * App.CELLSIZE) {
@@ -58,10 +60,12 @@ public class Enemy extends GameObject {
 
             if (App.map[i][0].equals("X")) {
                 paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(i, 0))));
+                paths.get(paths.size()-1).add(0, new Coordinates(i, -1));
             }
 
             if (App.map[i][App.BOARD_WIDTH-1].equals("X")) {
                 paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(i, App.BOARD_WIDTH-1))));
+                paths.get(paths.size()-1).add(0, new Coordinates(i, App.BOARD_WIDTH + 1));
             }
         }
         // for (Coordinates coord : paths.get(0)) {

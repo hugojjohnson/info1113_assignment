@@ -1,19 +1,8 @@
 // package WizardTD;
 
 public class Playground {
-
     public static void main (String[] args) {
-        int i = 1;
-        switch (i) {
-            case 1:
-            System.out.println("hi");
-            break;
-            default:
-                System.out.println("Oh no");
-                break;
-        }
     }
-    
 }
 
 
