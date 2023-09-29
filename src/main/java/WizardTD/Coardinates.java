@@ -1,15 +1,13 @@
-
 package WizardTD;
 
-public class Coordinates {
+class Coardinates {
     int x;
     int y;
-
-    Coordinates (int y, int x) {
+    
+    Coardinates (int y, int x) {
         this.y = y;
         this.x = x;
     }
-
     public int getX() {
         return this.x;
     }

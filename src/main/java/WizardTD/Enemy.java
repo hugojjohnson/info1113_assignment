@@ -1,7 +1,8 @@
 package WizardTD;
+
 import WizardTD.App;
 import WizardTD.GameObject;
-// import WizardTD.Coordinates;
+// import WizardTD.Coardinates;
 // import WizardTD.*;
 import processing.core.PImage;
 
@@ -13,8 +14,8 @@ import java.util.Arrays;
 public class Enemy extends GameObject {
 
     // ========== Variables ==========
-    public static ArrayList<ArrayList<Coordinates>> paths = new ArrayList<ArrayList<Coordinates>>();
-    public ArrayList<Coordinates> checkpoints;
+    public static ArrayList<ArrayList<Coardinates>> paths = new ArrayList<ArrayList<Coardinates>>();
+    public ArrayList<Coardinates> checkpoints;
 
     public String type;
     public int hp;
@@ -25,8 +26,7 @@ public class Enemy extends GameObject {
 
     public Enemy() {
         super (0, 0);
-        this.checkpoints = new ArrayList<Coordinates>(paths.get(0));
-        System.out.println(this.checkpoints.get(0).getY());
+        this.checkpoints = new ArrayList<Coardinates>(paths.get(0));
         this.set_position(this.checkpoints.get(0).getX() * App.CELLSIZE, this.checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR);
 
         this.type = "gremlin";
@@ -34,12 +34,12 @@ public class Enemy extends GameObject {
         this.speed = 1;
         this.armour = 0.5f;
         this.mana_gained_on_kill = 10;
-        // this.setSprite(new App().gremlin);
+        this.setSprite(new App().gremlin);
     }
 
     public Enemy(String type, int hp, float speed, float armour, int mana_gained_on_kill) {
         super (0, 0);
-        this.checkpoints = new ArrayList<Coordinates>(paths.get(0));
+        this.checkpoints = new ArrayList<Coardinates>(paths.get(0));
         this.set_position(this.checkpoints.get(0).getX() * App.CELLSIZE, this.checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR);
 
         this.type = type;
@@ -52,76 +52,73 @@ public class Enemy extends GameObject {
 
 
     public void tick() {
-        if (this.x == checkpoints.get(0).getX() * App.CELLSIZE && this.y == checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR) {
+        int xPos = checkpoints.get(0).getX() * App.CELLSIZE;
+        int yPos = checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR;
+        // Move towards next checkpoint
+        // Gives an allowance of +- one speed cycle to allow for smooth movement and stop overcorrection.
+        if (this.x < xPos - speed) {
+            this.x += speed;
+        } else if (this.x > xPos + speed) {
+            this.x -= speed;
+        } else if (this.y < yPos - speed) {
+            this.y += speed;
+        } else if (this.y > yPos + speed){
+            this.y -= speed;
+        } else {
             this.checkpoints.remove(0);
             return;
         }
-        // Move towards next checkpoint
-        if (this.x < checkpoints.get(0).getX() * App.CELLSIZE) {
-            this.x++;
-        } else {
-            this.x--;
-        }
-        if (this.y < checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR) {
-            this.y++;
-        } else {
-            this.y--;
-        }
-        // this.x++;
     }
 
 
     public static void generateAllPaths() {
         for (int i = 0; i < App.BOARD_WIDTH; i++) {
             if (App.map[0][i].equals("X")) {
-                paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(0, i))));
+                paths.add(new ArrayList<Coardinates>(generatePath(App.map, new Coardinates(0, i))));
             }
 
             if (App.map[App.BOARD_WIDTH-1][i].equals("X")) {
-                paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(App.BOARD_WIDTH-1, i))));
+                paths.add(new ArrayList<Coardinates>(generatePath(App.map, new Coardinates(App.BOARD_WIDTH-1, i))));
             }
 
             if (App.map[i][0].equals("X")) {
-                paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(i, 0))));
-                paths.get(paths.size()-1).add(0, new Coordinates(i, -1));
+                paths.add(new ArrayList<Coardinates>(generatePath(App.map, new Coardinates(i, 0))));
+                paths.get(paths.size()-1).add(0, new Coardinates(i, -1));
             }
 
             if (App.map[i][App.BOARD_WIDTH-1].equals("X")) {
-                paths.add(new ArrayList<Coordinates>(generatePath(App.map, new Coordinates(i, App.BOARD_WIDTH-1))));
-                paths.get(paths.size()-1).add(0, new Coordinates(i, App.BOARD_WIDTH + 1));
+                paths.add(new ArrayList<Coardinates>(generatePath(App.map, new Coardinates(i, App.BOARD_WIDTH-1))));
+                paths.get(paths.size()-1).add(0, new Coardinates(i, App.BOARD_WIDTH + 1));
             }
         }
-        // for (Coordinates coord : paths.get(0)) {
-        //     System.out.printf("Path at %d, %d.%n", coord.getX(), coord.getY());
-        // }
     }
 
-    public static ArrayList<Coordinates> generatePath (String[][] map, Coordinates start_point) {
+    public static ArrayList<Coardinates> generatePath (String[][] map, Coardinates start_point) {
         int x = start_point.getX();
         int y = start_point.getY();
 
         if (x > 0 && map[y][x-1].equals("W")) {
-            ArrayList<Coordinates> returnList = new ArrayList<Coordinates>();
-            returnList.add(new Coordinates(y, x));
-            // returnList.add(new Coordinates(y, x-1)); // Add wizard house after.
+            ArrayList<Coardinates> returnList = new ArrayList<Coardinates>();
+            returnList.add(new Coardinates(y, x));
+            // returnList.add(new Coardinates(y, x-1)); // Add wizard house after.
             return returnList;
         }
         if (x < App.BOARD_WIDTH && map[y][x+1].equals("W")) {
-            ArrayList<Coordinates> returnList = new ArrayList<Coordinates>();
-            returnList.add(new Coordinates(y, x));
-            // returnList.add(new Coordinates(y, x+1)); // Add wizard house after.
+            ArrayList<Coardinates> returnList = new ArrayList<Coardinates>();
+            returnList.add(new Coardinates(y, x));
+            // returnList.add(new Coardinates(y, x+1)); // Add wizard house after.
             return returnList;
         }
         if (y > 0 && map[y-1][x].equals("W")) {
-            ArrayList<Coordinates> returnList = new ArrayList<Coordinates>();
-            returnList.add(new Coordinates(y, x));
-            // returnList.add(new Coordinates(y-1, x)); // Add wizard house after.
+            ArrayList<Coardinates> returnList = new ArrayList<Coardinates>();
+            returnList.add(new Coardinates(y, x));
+            // returnList.add(new Coardinates(y-1, x)); // Add wizard house after.
             return returnList;
         }
         if (y < App.BOARD_WIDTH && map[y+1][x].equals("W")) {
-            ArrayList<Coordinates> returnList = new ArrayList<Coordinates>();
-            returnList.add(new Coordinates(y, x));
-            // returnList.add(new Coordinates(y+1, x)); // Add wizard house after.
+            ArrayList<Coardinates> returnList = new ArrayList<Coardinates>();
+            returnList.add(new Coardinates(y, x));
+            // returnList.add(new Coardinates(y+1, x)); // Add wizard house after.
             return returnList;
         }
 
@@ -130,36 +127,36 @@ public class Enemy extends GameObject {
         if (x > 0 && map[y][x-1].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y][x-1] = "-";
-            ArrayList<Coordinates> returnList = generatePath(returnMap, new Coordinates(y, x-1));
+            ArrayList<Coardinates> returnList = generatePath(returnMap, new Coardinates(y, x-1));
             if (returnList != null) {
-                returnList.add(0, new Coordinates(y, x));
+                returnList.add(0, new Coardinates(y, x));
                 return returnList;
             }
         }
         if (x < App.BOARD_WIDTH && map[y][x+1].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y][x+1] = "-";
-            ArrayList<Coordinates> returnList = generatePath(returnMap, new Coordinates(y, x+1));
+            ArrayList<Coardinates> returnList = generatePath(returnMap, new Coardinates(y, x+1));
             if (returnList != null) {
-                returnList.add(0, new Coordinates(y, x));
+                returnList.add(0, new Coardinates(y, x));
                 return returnList;
             }
         }
         if (y > 0 && map[y-1][x].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y-1][x] = "-";
-            ArrayList<Coordinates> returnList = generatePath(returnMap, new Coordinates(y-1, x));
+            ArrayList<Coardinates> returnList = generatePath(returnMap, new Coardinates(y-1, x));
             if (returnList != null) {
-                returnList.add(0, new Coordinates(y, x));
+                returnList.add(0, new Coardinates(y, x));
                 return returnList;
             }
         }
         if (y < App.BOARD_WIDTH && map[y+1][x].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y+1][x] = "-";
-            ArrayList<Coordinates> returnList = generatePath(returnMap, new Coordinates(y+1, x));
+            ArrayList<Coardinates> returnList = generatePath(returnMap, new Coardinates(y+1, x));
             if (returnList != null) {
-                returnList.add(0, new Coordinates(y, x));
+                returnList.add(0, new Coardinates(y, x));
                 return returnList;
             }
         }

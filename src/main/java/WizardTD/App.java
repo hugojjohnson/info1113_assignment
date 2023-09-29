@@ -1,4 +1,6 @@
+
 package WizardTD;
+
 
 import processing.core.PApplet;
 import processing.core.PImage;
@@ -12,6 +14,8 @@ import java.awt.image.BufferedImage;
 
 import java.io.*;
 import java.util.*;
+
+import org.checkerframework.checker.units.qual.A;
 
 public class App extends PApplet {
 
@@ -33,13 +37,19 @@ public class App extends PApplet {
     public static String[][] map = new String[BOARD_WIDTH][BOARD_WIDTH];
     public Board_Piece piece;
     public ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+
+    // I will put these in a HashMap at some point. 
     public PImage path0, path1, path2, path3, gremlin;
     public PImage grass, shrub, beetle, fireball, gremlin1, gremlin2, gremlin3, gremlin4, gremlin5;
     public PImage tower0, tower1, tower2, wizard_house, worm;
+    public int currentWaveIndex = 0;
 
     public PImage boardImg;
 
-    public Coordinates wizardCoordinates;
+    public Coardinates wizardCoardinates;
+
+    JSONArray wavesJSON;
+    WaveManager waveManager;
 
 
 
@@ -61,6 +71,7 @@ public class App extends PApplet {
         frameRate(FPS);
         load_images();
         load_json();
+        Button button = new Button();
 
         try {
             setupBoard();
@@ -70,7 +81,7 @@ public class App extends PApplet {
         }
 
         Enemy.generateAllPaths();
-        spawnEnemy();
+        waveManager = new WaveManager(wavesJSON, this); // Must be called after generateAllPaths.
     }
 
     public void load_images() {
@@ -101,14 +112,7 @@ public class App extends PApplet {
     public void load_json() {
         JSONObject json = loadJSONObject(configPath);
         String layout = json.getString("layout");
-        JSONArray waves = json.getJSONArray("waves");
-
-        // for (JSONObject obj : waves.objects()) {
-        //     System.out.println(obj.getInt("duration"));
-        // }
-
-
-        System.out.println(layout);
+        wavesJSON = json.getJSONArray("waves");
     }
 
     public void setupBoard() throws FileNotFoundException {
@@ -136,7 +140,7 @@ public class App extends PApplet {
                 } else  if (map[i][j].equals("X")) {
                     piece.setSprite(find_piece(map, i, j));
                 } else  if (map[i][j].equals("W")) {
-                    wizardCoordinates = new Coordinates(i, j);
+                    wizardCoardinates = new Coardinates(i, j);
                 }
                 boardImg.copy(piece.getSprite(), 0, 0, CELLSIZE, CELLSIZE, j*CELLSIZE, i*CELLSIZE + TOPBAR, CELLSIZE, CELLSIZE);
             }
@@ -151,8 +155,48 @@ public class App extends PApplet {
         // The wizard house is drawn on separately because it has a transparent background, and 
         // image.copy does not work with backgrounds like those, so it was easier to just draw it.
         piece.setSprite(wizard_house);
-        piece.set_position(wizardCoordinates.getX() * CELLSIZE, wizardCoordinates.getY() * CELLSIZE + TOPBAR);
+        piece.set_position(wizardCoardinates.getX() * CELLSIZE, wizardCoardinates.getY() * CELLSIZE + TOPBAR);
         piece.draw(this);
+    }
+
+    public void drawUI() {
+        background(255, 245, 230);
+        textSize(20);
+        fill(0, 0, 0);
+        text("Wave: " + currentWaveIndex, 10, 30);
+
+        // Add 60 each time.
+        textSize(11);
+        text("2x speed", 690, 70);
+        text("PAUSE", 690, 130);
+        text("Build\ntower", 690, 190);
+        text("Upgrade\nrange", 690, 250);
+        text("Upgrade\nspeed", 690, 310);
+        text("Upgrade\ndamage", 690, 370);
+        text("Mana pool\n cost: 100", 690, 430);
+
+        fill(0, 0, 0, 0);
+        stroke(0, 0, 0);
+        strokeWeight(3);
+
+        // Add 60 each time.
+        rect(645, 60, 40, 40, 3);
+        rect(645, 120, 40, 40, 3);
+        rect(645, 180, 40, 40, 3);
+        rect(645, 240, 40, 40, 3);
+        rect(645, 300, 40, 40, 3);
+        rect(645, 360, 40, 40, 3);
+        rect(645, 420, 40, 40, 3);
+
+        textSize(25);
+        fill(0, 0, 0);
+        text("FF", 650, 90);
+        text("P", 650, 150);
+        text("T", 650, 210);
+        text("U1", 650, 270);
+        text("U2", 650, 330);
+        text("U3", 650, 390);
+        text("M", 650, 450);
     }
 
 
@@ -231,9 +275,15 @@ public class App extends PApplet {
                 return gremlin;
         }
     }
-
+    
     void spawnEnemy () {
         Enemy enemy = new Enemy();
+        // Update this to set the sprite with the RELEVANT SPRITE, I GUESS.
+        enemy.setSprite(gremlin);
+        enemies.add(enemy);
+    }
+    void spawnEnemy (Enemy enemy) {
+        // Update this to set the sprite with the RELEVANT SPRITE, I GUESS.
         enemy.setSprite(gremlin);
         enemies.add(enemy);
     }
@@ -254,12 +304,13 @@ public class App extends PApplet {
     }
 
 
-
     @Override
     public void draw() {
+        drawUI();
         drawBoard();
         despawnEnemies();
-        
+        waveManager.tick();
+
         for (int i = 0; i < enemies.size(); i++) {
             enemies.get(i).tick();
             enemies.get(i).draw(this);
@@ -342,18 +393,18 @@ public class App extends PApplet {
     }
 }
 
-class Coordinates {
-    int x;
-    int y;
+// class Coardinates {
+//     int x;
+//     int y;
     
-    Coordinates (int y, int x) {
-        this.y = y;
-        this.x = x;
-    }
-    public int getX() {
-        return this.x;
-    }
-    public int getY() {
-        return this.y;
-    }
-}
+//     Coardinates (int y, int x) {
+//         this.y = y;
+//         this.x = x;
+//     }
+//     public int getX() {
+//         return this.x;
+//     }
+//     public int getY() {
+//         return this.y;
+//     }
+// }
