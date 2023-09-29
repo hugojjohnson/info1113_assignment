@@ -42,6 +42,7 @@ public class App extends PApplet {
     public Coordinates wizardCoordinates;
 
 
+
     // ========== Methods ==========
     public App() {
         this.configPath = "config.json";
@@ -59,6 +60,7 @@ public class App extends PApplet {
     public void setup() {
         frameRate(FPS);
         load_images();
+        load_json();
 
         try {
             setupBoard();
@@ -96,6 +98,19 @@ public class App extends PApplet {
         worm = this.loadImage("src/main/resources/WizardTD/worm.png");
     }
     
+    public void load_json() {
+        JSONObject json = loadJSONObject(configPath);
+        String layout = json.getString("layout");
+        JSONArray waves = json.getJSONArray("waves");
+
+        // for (JSONObject obj : waves.objects()) {
+        //     System.out.println(obj.getInt("duration"));
+        // }
+
+
+        System.out.println(layout);
+    }
+
     public void setupBoard() throws FileNotFoundException {
         /**  Drawing the board was split into two stages to improve performance.
         This first stage reads in the map, and constructs the board with all of the correct paths in the correct
@@ -218,7 +233,7 @@ public class App extends PApplet {
     }
 
     void spawnEnemy () {
-        Enemy enemy = new Enemy(0, 0);
+        Enemy enemy = new Enemy();
         enemy.setSprite(gremlin);
         enemies.add(enemy);
     }

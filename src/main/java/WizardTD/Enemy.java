@@ -13,20 +13,43 @@ import java.util.Arrays;
 public class Enemy extends GameObject {
 
     // ========== Variables ==========
-
     public static ArrayList<ArrayList<Coordinates>> paths = new ArrayList<ArrayList<Coordinates>>();
     public ArrayList<Coordinates> checkpoints;
 
+    public String type;
+    public int hp;
+    public float speed;
+    public float armour;
+    public int mana_gained_on_kill;
 
-    public Enemy(int x, int y) {
-        super(x, y);
+
+    public Enemy() {
+        super (0, 0);
         this.checkpoints = new ArrayList<Coordinates>(paths.get(0));
-        for (ArrayList<Coordinates> path : paths) {
-            for (Coordinates coord : path) {
-                System.out.printf("(%d, %d)%n", coord.getX(), coord.getY());
-            }
-        }
+        System.out.println(this.checkpoints.get(0).getY());
+        this.set_position(this.checkpoints.get(0).getX() * App.CELLSIZE, this.checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR);
+
+        this.type = "gremlin";
+        this.hp = 100;
+        this.speed = 1;
+        this.armour = 0.5f;
+        this.mana_gained_on_kill = 10;
+        // this.setSprite(new App().gremlin);
     }
+
+    public Enemy(String type, int hp, float speed, float armour, int mana_gained_on_kill) {
+        super (0, 0);
+        this.checkpoints = new ArrayList<Coordinates>(paths.get(0));
+        this.set_position(this.checkpoints.get(0).getX() * App.CELLSIZE, this.checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR);
+
+        this.type = type;
+        this.hp = hp;
+        this.speed = speed;
+        this.armour = armour;
+        this.mana_gained_on_kill = mana_gained_on_kill;
+    }
+
+
 
     public void tick() {
         if (this.x == checkpoints.get(0).getX() * App.CELLSIZE && this.y == checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR) {
@@ -153,3 +176,5 @@ public class Enemy extends GameObject {
         return mapCopy;
     }
 }
+
+
