@@ -13,6 +13,8 @@ public abstract class GameObject {
 
     private PImage sprite;
 
+    public static App app;
+
     /**
      * I'm not sure what this does but will leave it here until further notice
      * 
@@ -45,7 +47,7 @@ public abstract class GameObject {
      * 
      * @param app The window to draw onto.
      */
-    public void draw(PApplet app) {
+    public void draw(App app) {
         // The image() method is used to draw PImages onto the screen.
         // The first argument is the image, the second and third arguments are coordinates
         app.image(this.sprite, this.x, this.y);

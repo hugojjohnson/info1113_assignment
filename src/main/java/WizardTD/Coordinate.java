@@ -1,10 +1,10 @@
 package WizardTD;
 
-class Coardinates {
+class Coordinate {
     int x;
     int y;
     
-    Coardinates (int y, int x) {
+    Coordinate (int y, int x) {
         this.y = y;
         this.x = x;
     }

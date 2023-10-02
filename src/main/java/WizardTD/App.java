@@ -1,16 +1,12 @@
 
 package WizardTD;
 
-
 import processing.core.PApplet;
 import processing.core.PImage;
 import processing.data.JSONArray;
 import processing.data.JSONObject;
 import processing.event.MouseEvent;
 
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 
 import java.io.*;
 import java.util.*;
@@ -24,19 +20,16 @@ public class App extends PApplet {
     public static final int SIDEBAR = 120;
     public static final int TOPBAR = 40;
     public static final int BOARD_WIDTH = 20;
-
     public static int WIDTH = CELLSIZE*BOARD_WIDTH+SIDEBAR;
     public static int HEIGHT = BOARD_WIDTH*CELLSIZE+TOPBAR;
-
-    public static final int FPS = 60;
+    public static final int FPS = 20;
     public String configPath;
     public Random random = new Random();
 
-
     // ========== Variables ==========
     public static String[][] map = new String[BOARD_WIDTH][BOARD_WIDTH];
-    public Board_Piece piece;
     public ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+    public ArrayList<Fireball> fireballs = new ArrayList<Fireball>();
 
     // I will put these in a HashMap at some point. 
     public PImage path0, path1, path2, path3, gremlin;
@@ -44,12 +37,31 @@ public class App extends PApplet {
     public PImage tower0, tower1, tower2, wizard_house, worm;
     public int currentWaveIndex = 0;
 
-    public PImage boardImg;
-
-    public Coardinates wizardCoardinates;
 
     JSONArray wavesJSON;
-    WaveManager waveManager;
+    EnemyManager enemyManager;
+
+    ButtonManager buttonManager;
+    TowerManager towerManager;
+    BoardManager boardManager;
+
+    // Actions
+    public boolean placingTowers = false;
+    public boolean paused = false;
+    public boolean upgrade_range, upgrade_speed, upgrade_damage;
+
+
+    public int mana;
+    public int mana_cap;
+    public int mana_gained_per_second;
+    public int mana_pool_spell_initial_cost, mana_pool_spell_cost_increase_per_use;
+    public int mana_pool_spell_cap_multiplier, mana_pool_spell_mana_gained_multiplier;
+
+    String layout;
+
+    int mana_trickle_counter = 0;
+
+
 
 
 
@@ -68,20 +80,24 @@ public class App extends PApplet {
      */
 	@Override
     public void setup() {
+        towerManager = new TowerManager(this);
         frameRate(FPS);
         load_images();
         load_json();
-        Button button = new Button();
+        buttonManager = new ButtonManager(this);
+        setupButtons();
+        GameObject.app = this;
 
+        System.out.printf("Creating a new board with layout %s%n.", layout);
+        boardManager = new BoardManager(this, layout);
         try {
-            setupBoard();
+            boardManager.setupBoard();
         } catch (FileNotFoundException e) {
             System.out.println(e);
-            return;
         }
 
         Enemy.generateAllPaths();
-        waveManager = new WaveManager(wavesJSON, this); // Must be called after generateAllPaths.
+        enemyManager = new EnemyManager(wavesJSON, this); // Must be called after generateAllPaths.
     }
 
     public void load_images() {
@@ -111,195 +127,77 @@ public class App extends PApplet {
     
     public void load_json() {
         JSONObject json = loadJSONObject(configPath);
-        String layout = json.getString("layout");
+        layout = json.getString("layout");
         wavesJSON = json.getJSONArray("waves");
+
+        TowerManager.initial_tower_range = json.getInt("initial_tower_range");
+        TowerManager.initial_tower_firing_speed = json.getFloat("initial_tower_firing_speed");
+        TowerManager.initial_tower_damage = json.getInt("initial_tower_damage");
+        TowerManager.initial_tower_cost = json.getInt("tower_cost");
+
+
+        mana = json.getInt("initial_mana");
+        mana_cap = json.getInt("initial_mana_cap");
+        mana_gained_per_second = json.getInt("initial_mana_gained_per_second");
+        mana_pool_spell_initial_cost = json.getInt("mana_pool_spell_initial_cost");
+        mana_pool_spell_cost_increase_per_use = json.getInt("mana_pool_spell_cost_increase_per_use");
+        mana_pool_spell_cap_multiplier = json.getInt("mana_pool_spell_cap_multiplier");
+        mana_pool_spell_mana_gained_multiplier = json.getInt("mana_pool_spell_mana_gained_multiplier");
     }
 
-    public void setupBoard() throws FileNotFoundException {
-        /**  Drawing the board was split into two stages to improve performance.
-        This first stage reads in the map, and constructs the board with all of the correct paths in the correct
-        orientations. It stitches each piece together in the PImage called boardImg.
-        That way, none of the calculations have to be done again and again in the draw function.
-        **/
-        Scanner input = new Scanner(new File("level1.txt"));
-        for (int i = 0; i < BOARD_WIDTH; i++) {
-            map[i] = input.nextLine().split("");
-        }
-        // https://processing.org/reference/createImage_.html
-        boardImg = createImage(CELLSIZE * (BOARD_WIDTH+1), CELLSIZE * (BOARD_WIDTH+1) + 30, ARGB);
-        
-        piece = new Board_Piece(0, 0);
-
-        for (int i = 0; i < BOARD_WIDTH; i++) {
-            for (int j = 0; j < BOARD_WIDTH; j++) {
-                piece.set_position(j*CELLSIZE, i*CELLSIZE + TOPBAR);
-                if (map[i][j].equals(" ")) {
-                    piece.setSprite(grass);
-                } else  if (map[i][j].equals("S")) {
-                    piece.setSprite(shrub);
-                } else  if (map[i][j].equals("X")) {
-                    piece.setSprite(find_piece(map, i, j));
-                } else  if (map[i][j].equals("W")) {
-                    wizardCoardinates = new Coardinates(i, j);
-                }
-                boardImg.copy(piece.getSprite(), 0, 0, CELLSIZE, CELLSIZE, j*CELLSIZE, i*CELLSIZE + TOPBAR, CELLSIZE, CELLSIZE);
-            }
-        }
-    }
-
-    public void drawBoard() {
-        piece.setSprite(boardImg);
-        piece.set_position(0, 0);
-        piece.draw(this);
-
-        // The wizard house is drawn on separately because it has a transparent background, and 
-        // image.copy does not work with backgrounds like those, so it was easier to just draw it.
-        piece.setSprite(wizard_house);
-        piece.set_position(wizardCoardinates.getX() * CELLSIZE, wizardCoardinates.getY() * CELLSIZE + TOPBAR);
-        piece.draw(this);
+    public void setupButtons() {
+        buttonManager.buttons.add(new Button(645, 60, "FF", "2x speed"));
+        buttonManager.buttons.add(new Button(645, 120, "P", "PAUSE"));
+        buttonManager.buttons.add(new Button(645, 180, "T", "Build\ntower"));
+        buttonManager.buttons.add(new Button(645, 240, "U1", "Upgrade\nrange"));
+        buttonManager.buttons.add(new Button(645, 300, "U2", "Upgrade\nspeed"));
+        buttonManager.buttons.add(new Button(645, 360, "U3", "Upgrade\ndamage"));
+        buttonManager.buttons.add(new Button(645, 420, "M", "Mana pool\ncost: "));
     }
 
     public void drawUI() {
-        background(255, 245, 230);
+        stroke(0, 0, 0, 0);
+        fill(255, 245, 230);
+        rect(0, 0, WIDTH, TOPBAR);
+        rect(CELLSIZE * BOARD_WIDTH, 0, SIDEBAR, HEIGHT);
         textSize(20);
         fill(0, 0, 0);
         text("Wave: " + currentWaveIndex, 10, 30);
 
-        // Add 60 each time.
-        textSize(11);
-        text("2x speed", 690, 70);
-        text("PAUSE", 690, 130);
-        text("Build\ntower", 690, 190);
-        text("Upgrade\nrange", 690, 250);
-        text("Upgrade\nspeed", 690, 310);
-        text("Upgrade\ndamage", 690, 370);
-        text("Mana pool\n cost: 100", 690, 430);
+        // Draw buttons
+        for (Button button : buttonManager.buttons) {
+            button.draw(this);
+        }
 
-        fill(0, 0, 0, 0);
-        stroke(0, 0, 0);
-        strokeWeight(3);
+        // Just putting the progress bar here...
+        strokeWeight(2);
+        fill(255, 255, 255);
+        // mana / max mana * width
+        rect(375, 10, 345, 20);
+        fill(0, 255, 255);
+        rect(375, 10, (int)(345 * mana/mana_cap), 20);
 
-        // Add 60 each time.
-        rect(645, 60, 40, 40, 3);
-        rect(645, 120, 40, 40, 3);
-        rect(645, 180, 40, 40, 3);
-        rect(645, 240, 40, 40, 3);
-        rect(645, 300, 40, 40, 3);
-        rect(645, 360, 40, 40, 3);
-        rect(645, 420, 40, 40, 3);
-
-        textSize(25);
-        fill(0, 0, 0);
-        text("FF", 650, 90);
-        text("P", 650, 150);
-        text("T", 650, 210);
-        text("U1", 650, 270);
-        text("U2", 650, 330);
-        text("U3", 650, 390);
-        text("M", 650, 450);
+        textSize(14);
+        fill(0);
+        text(mana + " / " + mana_cap, 500, 25);
     }
 
 
 
-    PImage find_piece (String[][] map, int x, int y) {
-        /**
-        The variable 'count' is used to combine the  number and orientation of paths into a single number.
-        Top is 8, right is 4, bottom is 2, left is 1.
-        For example, if count is 13 (= 8 + 4 + 1) there is a top, right and left path leading off it.
-        **/
-        int count = 0;
-
-        // Top
-        if (y == 0) {
-            count += 8;
-        } else if (map[x][y-1].equals("X")){
-            count += 8;
-        }
-
-        // Right
-        if (x == BOARD_WIDTH-1) {
-            count += 4;
-        } else if (map[x+1][y].equals("X")){
-            count += 4;
-        }
-
-        // Bottom
-        if (y == BOARD_WIDTH-1) {
-            count += 2;
-        } else if (map[x][y+1].equals("X")){
-            count += 2;
-        }
-
-        // Left
-        if (x == 0) {
-            count += 1;
-        } else if (map[x-1][y].equals("X")){
-            count += 1;
-        }
-
-        // Hard coding problems require hardcoding solutions.
-        // - Me
-        switch (count) {
-            case 1:
-                return rotateImageByDegrees(path0, 90);
-            case 2:
-                return path0;
-            case 3:
-                return rotateImageByDegrees(path1, 180);
-            case 4:
-                return rotateImageByDegrees(path0, 90);
-            case 5:
-                return rotateImageByDegrees(path0, 90);
-            case 6:
-                return rotateImageByDegrees(path1, 270);
-            case 7:
-                return rotateImageByDegrees(path2, 270);
-            case 8:
-                return path0;
-            case 9:
-                return rotateImageByDegrees(path1, 90);
-            case 10:
-                return path0;
-            case 11:
-                return rotateImageByDegrees(path2, 180);
-            case 12:
-                return path1;
-            case 13:
-                return rotateImageByDegrees(path2, 90);
-            case 14:
-                return path2;
-            case 15:
-                return path3;
-            default:
-                // This shouldn't happen.
-                return gremlin;
-        }
-    }
-    
-    void spawnEnemy () {
-        Enemy enemy = new Enemy();
-        // Update this to set the sprite with the RELEVANT SPRITE, I GUESS.
-        enemy.setSprite(gremlin);
-        enemies.add(enemy);
-    }
-    void spawnEnemy (Enemy enemy) {
-        // Update this to set the sprite with the RELEVANT SPRITE, I GUESS.
-        enemy.setSprite(gremlin);
-        enemies.add(enemy);
-    }
-
-    void despawnEnemies() {
-        if (enemies.size() == 0) {
-            return;
-        }
-        ArrayList<Enemy> choppingBlock = new ArrayList<Enemy>();
-        for (Enemy enemy : enemies) {
-            if (enemy.checkpoints.size() == 0) {
-                choppingBlock.add(enemy);
+    public void updateManaWinOrLose() {
+        mana_trickle_counter++;
+        if (mana_trickle_counter >= mana_gained_per_second * FPS) {
+            mana_trickle_counter = 0;
+            if (mana < mana_cap) {
+                mana+= 4;
             }
         }
-        for (Enemy enemy : choppingBlock) {
-            enemies.remove(enemy);
+
+        if (mana <= 0) {
+            // lose game
+        }
+        if (mana > mana_cap) {
+            mana = mana_cap;
         }
     }
 
@@ -307,14 +205,16 @@ public class App extends PApplet {
     @Override
     public void draw() {
         drawUI();
-        drawBoard();
-        despawnEnemies();
-        waveManager.tick();
+        boardManager.drawBoard();
+        enemyManager.drawEnemies();
+        towerManager.drawTowers();
 
-        for (int i = 0; i < enemies.size(); i++) {
-            enemies.get(i).tick();
-            enemies.get(i).draw(this);
-        }
+        if (paused) { return; }
+
+        enemyManager.tick();
+        buttonManager.tick();
+        towerManager.tick();
+        updateManaWinOrLose();
     }
 
     /**
@@ -336,6 +236,44 @@ public class App extends PApplet {
 
     @Override
     public void mousePressed(MouseEvent e) {
+        towerManager.handleClick(mouseX, mouseY);
+        Button buttonPressed = buttonManager.mouseToButton(mouseX, mouseY);
+        if (buttonPressed == null) {
+            return;
+        }
+
+        switch (buttonPressed.label) {
+            case "FF":
+                Enemy.toggleSpeed();
+                return;
+            case "P":
+                paused= !paused;
+                return;
+            case "T":
+                placingTowers = !placingTowers;
+                return;
+            case "U1":
+                upgrade_range = !upgrade_range;
+                return;
+            case "U2":
+                upgrade_speed = !upgrade_speed;
+                return;
+            case "U3":
+                upgrade_damage = !upgrade_damage;
+                return;
+            case "M":
+                if (mana <= mana_pool_spell_initial_cost) {
+                    return;
+                }
+                mana -= mana_pool_spell_initial_cost;
+                mana_pool_spell_initial_cost += mana_pool_spell_cost_increase_per_use;
+                mana_cap = mana_cap * mana_pool_spell_cap_multiplier;
+                mana_gained_per_second = mana_gained_per_second * mana_pool_spell_mana_gained_multiplier;
+                return;
+            default:
+                return;
+
+        }
         
     }
 
@@ -354,57 +292,4 @@ public class App extends PApplet {
     public static void main(String[] args) {
         PApplet.main("WizardTD.App");
     }
-
-    /**
-     * Source: https://stackoverflow.com/questions/37758061/rotate-a-buffered-image-in-java
-     * @param pimg The image to be rotated
-     * @param angle between 0 and 360 degrees
-     * @return the new rotated image
-     */
-    public PImage rotateImageByDegrees(PImage pimg, double angle) {
-        BufferedImage img = (BufferedImage) pimg.getNative();
-        double rads = Math.toRadians(angle);
-        double sin = Math.abs(Math.sin(rads)), cos = Math.abs(Math.cos(rads));
-        int w = img.getWidth();
-        int h = img.getHeight();
-        int newWidth = (int) Math.floor(w * cos + h * sin);
-        int newHeight = (int) Math.floor(h * cos + w * sin);
-
-        PImage result = this.createImage(newWidth, newHeight, ARGB);
-        //BufferedImage rotated = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
-        BufferedImage rotated = (BufferedImage) result.getNative();
-        Graphics2D g2d = rotated.createGraphics();
-        AffineTransform at = new AffineTransform();
-        at.translate((newWidth - w) / 2, (newHeight - h) / 2);
-
-        int x = w / 2;
-        int y = h / 2;
-
-        at.rotate(rads, x, y);
-        g2d.setTransform(at);
-        g2d.drawImage(img, 0, 0, null);
-        g2d.dispose();
-        for (int i = 0; i < newWidth; i++) {
-            for (int j = 0; j < newHeight; j++) {
-                result.set(i, j, rotated.getRGB(i, j));
-            }
-        }
-        return result;
-    }
 }
-
-// class Coardinates {
-//     int x;
-//     int y;
-    
-//     Coardinates (int y, int x) {
-//         this.y = y;
-//         this.x = x;
-//     }
-//     public int getX() {
-//         return this.x;
-//     }
-//     public int getY() {
-//         return this.y;
-//     }
-// }
