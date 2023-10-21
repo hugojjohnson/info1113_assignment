@@ -15,12 +15,14 @@ public class Enemy extends GameObject {
     public float speed;
     public float armour;
     public int mana_gained_on_kill;
+    public boolean dead = false; // Becomes true after dying animation
+    public int deathTimer = 0;
     public static int speedMultiplier = 1;
 
 
     public Enemy(String type, int hp, float speed, float armour, int mana_gained_on_kill) {
         super (0, 0);
-        this.checkpoints = new ArrayList<Coordinate>(paths.get(0));
+        this.checkpoints = new ArrayList<Coordinate>(paths.get(app.random.nextInt(paths.size())));
         this.set_position(this.checkpoints.get(0).getX() * App.CELLSIZE, this.checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR);
 
         switch (type) {
@@ -49,6 +51,40 @@ public class Enemy extends GameObject {
 
 
     public void tick() {
+        if (this.hp <= 0) {
+            if (this.getSprite() == app.beetle || this.getSprite() == app.worm) {
+                this.dead = true;
+                return;
+            }
+            deathTimer++;
+            if (deathTimer == 19) { // 0 to 19 is 20 frames
+                this.dead = true;
+                return;
+            }
+
+            if (deathTimer < 4) {
+                return;
+            }
+            if (deathTimer < 8) {
+                this.setSprite(app.gremlin1);
+                return;
+            }
+            if (deathTimer < 12) {
+                this.setSprite(app.gremlin2);
+                return;
+            }
+            if (deathTimer < 16) {
+                this.setSprite(app.gremlin3);
+                return;
+            }
+            if (deathTimer < 20) {
+                this.setSprite(app.gremlin4);
+                return;
+            }
+
+            return;
+        }
+
         int xPos = checkpoints.get(0).getX() * App.CELLSIZE;
         int yPos = checkpoints.get(0).getY() * App.CELLSIZE + App.TOPBAR;
         // Move towards next checkpoint
@@ -102,13 +138,14 @@ public class Enemy extends GameObject {
         int x = start_point.getX();
         int y = start_point.getY();
 
+        
         if (x > 0 && map[y][x-1].equals("W")) {
             ArrayList<Coordinate> returnList = new ArrayList<Coordinate>();
             returnList.add(new Coordinate(y, x));
             // returnList.add(new Coordinate(y, x-1)); // Add wizard house after.
             return returnList;
         }
-        if (x < App.BOARD_WIDTH && map[y][x+1].equals("W")) {
+        if (x < (App.BOARD_WIDTH-1) && map[y][x+1].equals("W")) {
             ArrayList<Coordinate> returnList = new ArrayList<Coordinate>();
             returnList.add(new Coordinate(y, x));
             // returnList.add(new Coordinate(y, x+1)); // Add wizard house after.
@@ -120,7 +157,7 @@ public class Enemy extends GameObject {
             // returnList.add(new Coordinate(y-1, x)); // Add wizard house after.
             return returnList;
         }
-        if (y < App.BOARD_WIDTH && map[y+1][x].equals("W")) {
+        if (y < (App.BOARD_WIDTH-1) && map[y+1][x].equals("W")) {
             ArrayList<Coordinate> returnList = new ArrayList<Coordinate>();
             returnList.add(new Coordinate(y, x));
             // returnList.add(new Coordinate(y+1, x)); // Add wizard house after.
@@ -138,7 +175,7 @@ public class Enemy extends GameObject {
                 return returnList;
             }
         }
-        if (x < App.BOARD_WIDTH && map[y][x+1].equals("X")) {
+        if (x < (App.BOARD_WIDTH-1) && map[y][x+1].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y][x+1] = "-";
             ArrayList<Coordinate> returnList = generatePath(returnMap, new Coordinate(y, x+1));
@@ -156,7 +193,7 @@ public class Enemy extends GameObject {
                 return returnList;
             }
         }
-        if (y < App.BOARD_WIDTH && map[y+1][x].equals("X")) {
+        if (y < (App.BOARD_WIDTH-1) && map[y+1][x].equals("X")) {
             String[][] returnMap = copyMap(map);
             returnMap[y+1][x] = "-";
             ArrayList<Coordinate> returnList = generatePath(returnMap, new Coordinate(y+1, x));

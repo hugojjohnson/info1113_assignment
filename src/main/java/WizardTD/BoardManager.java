@@ -49,7 +49,6 @@ public class BoardManager {
 
         for (int i = 0; i < App.BOARD_WIDTH; i++) {
             for (int j = 0; j < App.BOARD_WIDTH; j++) {
-                System.out.printf("Drawing at (%d, %d)%n.", j*App.CELLSIZE, i*App.CELLSIZE + App.TOPBAR);
                 piece.set_position(j*App.CELLSIZE, i*App.CELLSIZE + App.TOPBAR);
                 if (App.map[i][j].equals(" ")) {
                     piece.setSprite(app.grass);
@@ -194,7 +193,7 @@ public class BoardManager {
     
 }
 
-
+// really just a wrapper for a GameObject.
 class BoardPiece extends GameObject {
     public BoardPiece() {
         super(0, 0);

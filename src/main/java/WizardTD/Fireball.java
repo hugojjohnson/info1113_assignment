@@ -7,7 +7,7 @@ public class Fireball extends GameObject {
     public int damage;
     public boolean hit_enemy = false;
 
-    public Fireball (int x, int y, Enemy target, int damage) {
+    public Fireball (float x, float y, Enemy target, int damage) {
         super(x, y);
         this.target = target;
         this.damage = damage;

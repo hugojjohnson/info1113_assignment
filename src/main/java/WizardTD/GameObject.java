@@ -8,20 +8,19 @@ import processing.core.PApplet;
  */
 public abstract class GameObject {
 
-    protected int x;
-    protected int y;
+    // These are floats because speed can be non-integer values.
+    protected float x;
+    protected float y;
 
     private PImage sprite;
 
     public static App app;
 
     /**
-     * I'm not sure what this does but will leave it here until further notice
-     * 
      * @param x The x-coordinate.
      * @param y The y-coordinate.
      */
-    public GameObject(int x, int y) {
+    public GameObject(float x, float y) {
         this.x = x;
         this.y = y;
     }
@@ -50,14 +49,14 @@ public abstract class GameObject {
     public void draw(App app) {
         // The image() method is used to draw PImages onto the screen.
         // The first argument is the image, the second and third arguments are coordinates
-        app.image(this.sprite, this.x, this.y);
+        app.image(this.sprite, (int)this.x, (int)this.y);
     }
 
     /**
      * Gets the x-coordinate.
      * @return The x-coordinate.
      */
-    public int getX() {
+    public float getX() {
         return this.x;
     }
 
@@ -65,7 +64,7 @@ public abstract class GameObject {
      * Returns the y-coordinate.
      * @return The y-coordinate.
      */
-    public int getY() {
+    public float getY() {
         return this.y;
     }
 

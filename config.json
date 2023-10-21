@@ -1,9 +1,9 @@
 {
-  "layout": "level1.txt",
+  "layout": "hugoslevel.txt",
   "waves": [
     {
-      "duration": 20,
-      "pre_wave_pause": 0.5,
+      "duration": 1,
+      "pre_wave_pause": 0,
       "monsters": [
         {
           "type": "gremlin",
@@ -16,7 +16,7 @@
         {
           "type": "beetle",
           "hp": 100,
-          "speed": 1,
+          "speed": 1.5,
           "armour": 0.5,
           "mana_gained_on_kill": 10,
           "quantity": 10
@@ -24,8 +24,8 @@
       ]
     },
     {
-      "duration": 8,
-      "pre_wave_pause": 0.5,
+      "duration": 1,
+      "pre_wave_pause": 1,
 	  "monsters": [
         {
           "type": "gremlin",
@@ -46,8 +46,8 @@
 	  ]
     },
     {
-      "duration": 5,
-      "pre_wave_pause": 10,
+      "duration": 1,
+      "pre_wave_pause": 1,
       "monsters": [
         {
           "type": "gremlin",
@@ -69,7 +69,7 @@
     },
     {
       "duration": 1,
-      "pre_wave_pause": 10,
+      "pre_wave_pause": 1,
       "monsters": [
         {
           "type": "gremlin",
@@ -95,7 +95,7 @@
   "initial_tower_damage": 40,
   "initial_mana": 200,
   "initial_mana_cap": 1000,
-  "initial_mana_gained_per_second": 2,
+  "initial_mana_gained_per_second": 4,
   "tower_cost": 100,
   "mana_pool_spell_initial_cost": 100,
   "mana_pool_spell_cost_increase_per_use": 150,

@@ -31,6 +31,7 @@ public class TowerManager {
     public void drawTowers() {
       for (Tower tower : towers) {
             tower.draw(app);
+            tower.updateSprite();
         }
         for (Fireball fireball : app.fireballs) {
             fireball.draw(app);
@@ -131,7 +132,6 @@ class Tower extends GameObject {
     }
 
     public void tick () {
-        updateSprite();
         damageRadius = TowerManager.initial_tower_range + App.CELLSIZE * this.range_level;
 
         fireCounter++;

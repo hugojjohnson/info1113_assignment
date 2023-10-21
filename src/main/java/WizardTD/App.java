@@ -22,7 +22,7 @@ public class App extends PApplet {
     public static final int BOARD_WIDTH = 20;
     public static int WIDTH = CELLSIZE*BOARD_WIDTH+SIDEBAR;
     public static int HEIGHT = BOARD_WIDTH*CELLSIZE+TOPBAR;
-    public static final int FPS = 20;
+    public static final int FPS = 60;
     public String configPath;
     public Random random = new Random();
 
@@ -39,11 +39,11 @@ public class App extends PApplet {
 
 
     JSONArray wavesJSON;
-    EnemyManager enemyManager;
 
     ButtonManager buttonManager;
     TowerManager towerManager;
     BoardManager boardManager;
+    EnemyManager enemyManager;
 
     // Actions
     public boolean placingTowers = false;
@@ -56,13 +56,11 @@ public class App extends PApplet {
     public int mana_gained_per_second;
     public int mana_pool_spell_initial_cost, mana_pool_spell_cost_increase_per_use;
     public int mana_pool_spell_cap_multiplier, mana_pool_spell_mana_gained_multiplier;
+    int mana_trickle_counter = 0;
 
     String layout;
 
-    int mana_trickle_counter = 0;
-
-
-
+    public int frames_left_in_wave = 0;
 
 
     // ========== Methods ==========
@@ -80,15 +78,15 @@ public class App extends PApplet {
      */
 	@Override
     public void setup() {
-        towerManager = new TowerManager(this);
         frameRate(FPS);
         load_images();
         load_json();
-        buttonManager = new ButtonManager(this);
-        setupButtons();
         GameObject.app = this;
 
-        System.out.printf("Creating a new board with layout %s%n.", layout);
+        towerManager = new TowerManager(this);
+        buttonManager = new ButtonManager(this);
+        setupButtons();
+
         boardManager = new BoardManager(this, layout);
         try {
             boardManager.setupBoard();
@@ -97,7 +95,8 @@ public class App extends PApplet {
         }
 
         Enemy.generateAllPaths();
-        enemyManager = new EnemyManager(wavesJSON, this); // Must be called after generateAllPaths.
+        enemyManager = new EnemyManager(wavesJSON, this); // Must be called after Enemy.generateAllPaths.
+        frames_left_in_wave = (int)(enemyManager.waves.get(0).pre_wave_pause);
     }
 
     public void load_images() {
@@ -162,14 +161,14 @@ public class App extends PApplet {
         rect(CELLSIZE * BOARD_WIDTH, 0, SIDEBAR, HEIGHT);
         textSize(20);
         fill(0, 0, 0);
-        text("Wave: " + currentWaveIndex, 10, 30);
+        text("Wave: " + (currentWaveIndex+1) + " starts: " + Math.round(frames_left_in_wave/App.FPS), 10, 30);
 
         // Draw buttons
         for (Button button : buttonManager.buttons) {
             button.draw(this);
         }
 
-        // Just putting the progress bar here...
+        // // Just putting the progress bar here...
         strokeWeight(2);
         fill(255, 255, 255);
         // mana / max mana * width
@@ -183,13 +182,12 @@ public class App extends PApplet {
     }
 
 
-
     public void updateManaWinOrLose() {
         mana_trickle_counter++;
-        if (mana_trickle_counter >= mana_gained_per_second * FPS) {
+        if (mana_trickle_counter >= FPS) {
             mana_trickle_counter = 0;
             if (mana < mana_cap) {
-                mana+= 4;
+                mana+= mana_gained_per_second;
             }
         }
 
@@ -201,18 +199,17 @@ public class App extends PApplet {
         }
     }
 
-
     @Override
     public void draw() {
-        drawUI();
         boardManager.drawBoard();
         enemyManager.drawEnemies();
         towerManager.drawTowers();
+        buttonManager.tick();
+        drawUI();
 
         if (paused) { return; }
 
         enemyManager.tick();
-        buttonManager.tick();
         towerManager.tick();
         updateManaWinOrLose();
     }
@@ -223,6 +220,7 @@ public class App extends PApplet {
 	@Override
     public void keyPressed(){
         // this.circle.keyPressed(this.keyCode);
+        System.out.println(keyCode);
     }
 
     /**
@@ -230,7 +228,37 @@ public class App extends PApplet {
      */
 	@Override
     public void keyReleased(){
-        // this.circle.keyReleased(this.keyCode);
+        // 49, 50, 51 are 1, 2, 3. Note that you can toggle towers and upgrade them even if you're not placing new towers.
+        // 70 is f
+        // 77 is m
+        // r is restart.
+        if (keyCode == 80) { // Pause
+            paused = !paused;
+        }
+        if (keyCode == 84) { // Placing towers
+            placingTowers = !placingTowers;
+        }
+        if (keyCode == 70) {
+            if (Enemy.speedMultiplier == 1) {
+                Enemy.speedMultiplier = 2;
+            } else {
+                Enemy.speedMultiplier = 1;
+            }
+        }
+
+        if (keyCode == 49) {
+            upgrade_range = !upgrade_range;
+        }
+        if (keyCode == 50) {
+            upgrade_speed = !upgrade_speed;
+        }
+        if (keyCode == 51) {
+            upgrade_damage = !upgrade_damage;
+        }
+
+        if (keyCode == 82) {
+            setup();
+        }
 
     }
 
