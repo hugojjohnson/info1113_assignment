@@ -2,8 +2,8 @@
   "layout": "hugoslevel.txt",
   "waves": [
     {
-      "duration": 1,
-      "pre_wave_pause": 0,
+      "duration": 20,
+      "pre_wave_pause": 10,
       "monsters": [
         {
           "type": "gremlin",
@@ -24,8 +24,8 @@
       ]
     },
     {
-      "duration": 1,
-      "pre_wave_pause": 1,
+      "duration": 15,
+      "pre_wave_pause": 5,
 	  "monsters": [
         {
           "type": "gremlin",
@@ -46,7 +46,7 @@
 	  ]
     },
     {
-      "duration": 1,
+      "duration": 10,
       "pre_wave_pause": 1,
       "monsters": [
         {
@@ -68,7 +68,7 @@
       ]
     },
     {
-      "duration": 1,
+      "duration": 10,
       "pre_wave_pause": 1,
       "monsters": [
         {
